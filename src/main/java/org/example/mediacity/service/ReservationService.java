@@ -5,6 +5,7 @@ import org.example.mediacity.domain.Loan;
 import org.example.mediacity.domain.Member;
 import org.example.mediacity.domain.Reservation;
 import org.example.mediacity.exception.BookAvailableException;
+import org.example.mediacity.exception.DuplicateReservationException;
 import org.example.mediacity.exception.ReservationPriorityException;
 import org.example.mediacity.exception.SuspendedMemberException;
 
@@ -34,6 +35,13 @@ public class ReservationService {
         }
         if (loanService.isAvailable(book)) {
             throw new BookAvailableException("Book " + book.title() + " is available");
+        }
+
+        List<Reservation> reservations = reservationsByBook.getOrDefault(book, List.of());
+        if (reservations.stream().anyMatch(reservation -> reservation.member().equals(member))) {
+            throw new DuplicateReservationException(
+                    "Member " + member.name() + " has already reserved " + book.title()
+            );
         }
 
         Reservation reservation = new Reservation(member, book, reservationDate);
