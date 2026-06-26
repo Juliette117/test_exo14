@@ -78,6 +78,11 @@
                 <version>${jacoco.version}</version>
                 <executions>
                     <execution>
+                        <configuration>
+                            <includes>
+                                <include>org/example/mediacity/*</include>
+                            </includes>
+                        </configuration>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
