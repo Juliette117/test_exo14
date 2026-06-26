@@ -15,6 +15,12 @@ Feature: Book reservations
     Then "Bob" is the first member in the reservation queue for "Dune"
     And "Chloe" is in position 2 in the reservation queue for "Dune"
 
+  Scenario: Rejecting a duplicate reservation from the same member
+    Given the book "Dune" is borrowed by "Alice"
+    And "Bob" has reserved the book "Dune"
+    When "Bob" tries to reserve the book "Dune"
+    Then the reservation is rejected because "Bob" has already reserved "Dune"
+
   Scenario: Returning a reserved book
     Given the book "Dune" is borrowed by "Alice"
     And "Bob" has reserved the book "Dune"
