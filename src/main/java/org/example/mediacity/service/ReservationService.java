@@ -1,9 +1,11 @@
 package org.example.mediacity.service;
 
 import org.example.mediacity.domain.Book;
+import org.example.mediacity.domain.Loan;
 import org.example.mediacity.domain.Member;
 import org.example.mediacity.domain.Reservation;
 import org.example.mediacity.exception.BookAvailableException;
+import org.example.mediacity.exception.ReservationPriorityException;
 import org.example.mediacity.exception.SuspendedMemberException;
 
 import java.time.LocalDate;
@@ -45,6 +47,30 @@ public class ReservationService {
 
     public Optional<Reservation> firstReservationFor(Book book) {
         return reservationsFor(book).stream().findFirst();
+    }
+
+    public Loan borrowReservedBook(Member member, Book book, LocalDate loanDate) {
+        Objects.requireNonNull(member);
+        Objects.requireNonNull(book);
+        Objects.requireNonNull(loanDate);
+
+        List<Reservation> reservations = reservationsByBook.getOrDefault(book, List.of());
+        if (reservations.isEmpty()) {
+            return loanService.createLoan(member, book, loanDate);
+        }
+
+        Reservation firstReservation = reservations.get(0);
+        if (!firstReservation.member().equals(member)) {
+            throw new ReservationPriorityException(
+                    "Member " + firstReservation.member().name() + " has reservation priority"
+            );
+        }
+
+        reservations.remove(0);
+        if (reservations.isEmpty()) {
+            reservationsByBook.remove(book);
+        }
+        return loanService.createLoan(member, book, loanDate);
     }
 
     public int positionInQueue(Member member, Book book) {
