@@ -9,6 +9,7 @@ import org.example.mediacity.domain.Loan;
 import org.example.mediacity.domain.Member;
 import org.example.mediacity.domain.Reservation;
 import org.example.mediacity.exception.BookAvailableException;
+import org.example.mediacity.exception.ReservationPriorityException;
 import org.example.mediacity.exception.SuspendedMemberException;
 import org.example.mediacity.service.LoanService;
 import org.example.mediacity.service.ReservationService;
@@ -26,6 +27,7 @@ public class ReservationSteps {
     private Map<String, Member> members;
     private Map<String, Book> books;
     private Map<String, Loan> loans;
+    private Loan lastLoan;
     private Throwable error;
 
     @Before
@@ -35,6 +37,7 @@ public class ReservationSteps {
         members = new HashMap<>();
         books = new HashMap<>();
         loans = new HashMap<>();
+        lastLoan = null;
         error = null;
     }
 
@@ -75,6 +78,16 @@ public class ReservationSteps {
         loanService.returnBook(loans.get(title), LocalDate.of(2026, 1, 10));
     }
 
+    @When("{string} borrows the returned reserved book {string}")
+    public void borrowsTheReturnedReservedBook(String memberName, String title) {
+        lastLoan = reservationService.borrowReservedBook(member(memberName), book(title), LocalDate.of(2026, 1, 11));
+    }
+
+    @When("{string} tries to borrow the returned reserved book {string}")
+    public void triesToBorrowTheReturnedReservedBook(String memberName, String title) {
+        error = catchThrowable(() -> reservationService.borrowReservedBook(member(memberName), book(title), LocalDate.of(2026, 1, 11)));
+    }
+
     @Then("{string}'s reservation is recorded for the book {string}")
     public void reservationIsRecordedForTheBook(String memberName, String title) {
         assertThat(reservationService.reservationsFor(book(title)))
@@ -101,6 +114,24 @@ public class ReservationSteps {
                 .map(Reservation::member)
                 .map(Member::name)
                 .contains(memberName);
+    }
+
+    @Then("{string} has a loan for the book {string}")
+    public void hasALoanForTheBook(String memberName, String title) {
+        assertThat(lastLoan.member().name()).isEqualTo(memberName);
+        assertThat(lastLoan.book().title()).isEqualTo(title);
+    }
+
+    @Then("the reservation queue for {string} is empty")
+    public void reservationQueueIsEmpty(String title) {
+        assertThat(reservationService.reservationsFor(book(title))).isEmpty();
+    }
+
+    @Then("the loan is rejected because {string} has reservation priority")
+    public void loanIsRejectedBecauseMemberHasReservationPriority(String memberName) {
+        assertThat(error)
+                .isInstanceOf(ReservationPriorityException.class)
+                .hasMessageContaining(memberName);
     }
 
     @Then("the reservation is rejected because the member is suspended")
