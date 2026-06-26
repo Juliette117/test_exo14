@@ -9,6 +9,7 @@ import org.example.mediacity.domain.Loan;
 import org.example.mediacity.domain.Member;
 import org.example.mediacity.domain.Reservation;
 import org.example.mediacity.exception.BookAvailableException;
+import org.example.mediacity.exception.DuplicateReservationException;
 import org.example.mediacity.exception.ReservationPriorityException;
 import org.example.mediacity.exception.SuspendedMemberException;
 import org.example.mediacity.service.LoanService;
@@ -137,6 +138,14 @@ public class ReservationSteps {
     @Then("the reservation is rejected because the member is suspended")
     public void reservationIsRejectedBecauseMemberIsSuspended() {
         assertThat(error).isInstanceOf(SuspendedMemberException.class);
+    }
+
+    @Then("the reservation is rejected because {string} has already reserved {string}")
+    public void reservationIsRejectedBecauseMemberAlreadyReservedBook(String memberName, String title) {
+        assertThat(error)
+                .isInstanceOf(DuplicateReservationException.class)
+                .hasMessageContaining(memberName)
+                .hasMessageContaining(title);
     }
 
     @Then("the reservation is rejected because the book is available")

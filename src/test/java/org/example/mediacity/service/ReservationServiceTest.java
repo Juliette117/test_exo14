@@ -3,6 +3,7 @@ package org.example.mediacity.service;
 import org.example.mediacity.domain.Book;
 import org.example.mediacity.domain.Loan;
 import org.example.mediacity.domain.Member;
+import org.example.mediacity.exception.DuplicateReservationException;
 import org.example.mediacity.exception.ReservationPriorityException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,5 +54,16 @@ class ReservationServiceTest {
         assertThatThrownBy(() -> reservationService.borrowReservedBook(chloe, dune, LocalDate.of(2026, 1, 11)))
                 .isInstanceOf(ReservationPriorityException.class)
                 .hasMessageContaining("Bob Dupont");
+    }
+
+    @Test
+    void shouldRejectADuplicateReservationForTheSameBookAndMember() {
+        loanService.createLoan(alice, dune, LocalDate.of(2026, 1, 1));
+        reservationService.reserve(bob, dune, LocalDate.of(2026, 1, 2));
+
+        assertThatThrownBy(() -> reservationService.reserve(bob, dune, LocalDate.of(2026, 1, 3)))
+                .isInstanceOf(DuplicateReservationException.class)
+                .hasMessageContaining("Bob Dupont")
+                .hasMessageContaining("Dune");
     }
 }
